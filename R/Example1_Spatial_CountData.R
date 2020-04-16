@@ -3,15 +3,15 @@
 ####	"A two-stage approach to estimate spatial and   ####
 ####   spatio-temporal disease risks in the presence  ####
 ####   of local discontinuities and clusters"         ####
-####	(Adin et al., 2018)                             ####
+####	(Adin et al., 2019)                             ####
 ##########################################################
 rm(list=ls())
 
-#install.packages("spdep", dependencies=TRUE)
-#install.packages("sp", dependencies=TRUE)
-#install.packages("Hmisc", dependencies=TRUE)
-#install.packages("RColorBrewer", dependencies=TRUE)
-#install.packages("INLA", repos=c(getOption("repos"), INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
+# install.packages("spdep", dependencies=TRUE)
+# install.packages("sp", dependencies=TRUE)
+# install.packages("Hmisc", dependencies=TRUE)
+# install.packages("RColorBrewer", dependencies=TRUE)
+# install.packages("INLA", repos=c(getOption("repos"), INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
 
 
 #############################################
@@ -28,7 +28,7 @@ library(Hmisc)
 ##  1) Load the original data:              ##
 ##	- Spanish stomach cancer mortality data ##
 ##############################################
-load("StomachCancer_ESP.Rdata")
+load("../data/StomachCancer_ESP.Rdata")
 str(Data)
 
 ## Map of the standardized mortality ratio (SMR) for the year 2013 ##

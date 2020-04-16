@@ -3,15 +3,15 @@
 ####	"A two-stage approach to estimate spatial and   ####
 ####   spatio-temporal disease risks in the presence  ####
 ####   of local discontinuities and clusters"         ####
-####	(Adin et al., 2018)                             ####
+####	(Adin et al., 2019)                             ####
 ##########################################################
 rm(list=ls())
 
-#install.packages("spdep", dependencies=TRUE)
-#install.packages("sp", dependencies=TRUE)
-#install.packages("Hmisc", dependencies=TRUE)
-#install.packages("RColorBrewer", dependencies=TRUE)
-#install.packages("INLA", repos=c(getOption("repos"), INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
+# install.packages("spdep", dependencies=TRUE)
+# install.packages("sp", dependencies=TRUE)
+# install.packages("Hmisc", dependencies=TRUE)
+# install.packages("RColorBrewer", dependencies=TRUE)
+# install.packages("INLA", repos=c(getOption("repos"), INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
 
 
 #####################################################
@@ -30,7 +30,7 @@ library(Hmisc)
 ##    regions of Navarre and Basque Country ##
 ##    during the period 2000-2008           ##
 ##############################################
-load("BrainCancer_MUN.Rdata")
+load("../data/BrainCancer_MUN.Rdata")
 
 str(Data.INCI)
 str(Data.MORT)
