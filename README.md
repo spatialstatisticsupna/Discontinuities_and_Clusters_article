@@ -65,6 +65,17 @@ R code to fit with INLA (http://www.r-inla.org/) the two-stage spatial and spati
    R code to fit the spatio-temporal models with space-time cluster structures described in Section 3.2 of the present work for each cluster configuration candidate.
   
   
+**3. Other auxiliary functions**
+
+- [**Cluster_neighbours.R**](https://github.com/spatialstatisticsupna/Discontinuities_and_Clusters_article/blob/master/R/Cluster_neighbours.R)
+
+  It returns the Kronecker product of 2 matrices and the eigenvectors which span the null space of this product.
+
+- [**kronecker_nullspace.R**](https://github.com/spatialstatisticsupna/Discontinuities_and_Clusters_article/blob/master/R/kronecker_nullspace.R)
+
+  Function to create the neighbourhood matrix of areas within each cluster.
+
+
 # References
 [Adin, A., Lee, D., Goicoa, T., and Ugarte, M.D. (2019). A two-stage approach to estimate spatial and spatio-temporal disease risks in the presence of local discontinuities and clusters. _Statistical Methods in Medical Research_, __28(9)__, 2595-2613.](https://doi.org/10.1177/0962280218767975)
 
