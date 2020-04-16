@@ -29,6 +29,19 @@ the Basque Country during the period 2000-2008.
 	- **_W_**: Spatial adjacency matrix of the administrative regions.
 
 
+# R code
+R code to fit with INLA (http://www.r-inla.org/) the two-stage spatial and spatio-temporal models described in Adin et al. (2019). All the R files are written by the authors of the paper.
+
+**1. Main files**
+
+- [**Example1_Spatial_CountData.R**](https://github.com/spatialstatisticsupna/Discontinuities_and_Clusters_article/blob/master/R/Example1_Spatial_CountData.R)
+
+  R code to fit two-stage spatial cluster models using Spanish stomach mortality data (stored in `StomachCancer_ESP.Rdata` file). It reproduces the results obtained in Section 5.1. of the present work.
+  
+- [**Example2_SpatioTemporal_CountData.R**](https://github.com/spatialstatisticsupna/Discontinuities_and_Clusters_article/blob/master/R/Example2_SpatioTemporal_CountData.R)
+
+  R code to fit two-stage spatio-temporal cluster models using brain cancer incidence data in the regions of Navarre and Basque Country (stored in `BrainCancer_MUN.Rdata` file). It reproduces the results obtained in Section 5.2. of the present work.
+  
 
 # References
 [Adin, A., Lee, D., Goicoa, T., and Ugarte, M.D. (2019). A two-stage approach to estimate spatial and spatio-temporal disease risks in the presence of local discontinuities and clusters. _Statistical Methods in Medical Research_, __28(9)__, 2595-2613.](https://doi.org/10.1177/0962280218767975)
