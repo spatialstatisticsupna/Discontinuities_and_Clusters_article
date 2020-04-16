@@ -57,12 +57,12 @@ R code to fit with INLA (http://www.r-inla.org/) the two-stage spatial and spati
   R code to fit the spatial models described in Equations (1) and (2) of the present work for each of the cluster configuration candidate.
   
  - [**TLmodel1a.R**](https://github.com/spatialstatisticsupna/Discontinuities_and_Clusters_article/blob/master/R/TLmodel1a.R), [**TLmodel1b.R**](https://github.com/spatialstatisticsupna/Discontinuities_and_Clusters_article/blob/master/R/TLmodel1b.R), [**TLmodel2a.R**](https://github.com/spatialstatisticsupna/Discontinuities_and_Clusters_article/blob/master/R/TLmodel2a.R) and  [**TLmodel2b.R**](https://github.com/spatialstatisticsupna/Discontinuities_and_Clusters_article/blob/master/R/TLmodel2b.R)
-
-  R code to fit the spatio-temporal models with purely spatial cluster structures described in Section 3.1 of the present work for each cluster configuration candidate.
+ 
+   R code to fit the spatio-temporal models with purely spatial cluster structures described in Section 3.1 of the present work for each cluster configuration candidate.
   
  - [**OptionI.R**](https://github.com/spatialstatisticsupna/Discontinuities_and_Clusters_article/blob/master/R/OptionI.R), [**OptionII.R**](https://github.com/spatialstatisticsupna/Discontinuities_and_Clusters_article/blob/master/R/OptionII.R), [**OptionIII.R**](https://github.com/spatialstatisticsupna/Discontinuities_and_Clusters_article/blob/master/R/OptionIII.R) and [**OptionIV.R**](https://github.com/spatialstatisticsupna/Discontinuities_and_Clusters_article/blob/master/R/OptionIV.R)
-
-  R code to fit the spatio-temporal models with space-time cluster structures described in Section 3.2 of the present work for each cluster configuration candidate.
+ 
+   R code to fit the spatio-temporal models with space-time cluster structures described in Section 3.2 of the present work for each cluster configuration candidate.
   
   
 # References
