@@ -1,4 +1,3 @@
-source("kronecker_nullspace.R")
 source("Cluster_neighbours.R")
 
 model.selection <- function(cluster.prior, Y.real, E.real, Qs, Qt, Carto=NULL,
@@ -25,7 +24,6 @@ time <- system.time({
     
     R.area.Leroux <- diag(dim(Qs)[1])-Qs
   
-    
     if(is.null(final.cluster)){
   
      ## Store the DIC values
@@ -40,104 +38,104 @@ time <- system.time({
      i <- 1
      
      data.temp <- data.frame(Y.real=Y.real, E.real=E.real, ID.area=rep(1:n,t),
-				     ID.year=rep(1:t,each=n), ID.area.year=seq(1,n*t))
+                             ID.year=rep(1:t,each=n), ID.area.year=seq(1,n*t))
 
-     null.space <- kronecker.null.space(Qt,Qs)
-     R <- null.space[[1]]
-     A_delta <- as.matrix(null.space[[2]])
-
-     r.def <- dim(A_delta)[1]
+     R <- kronecker(Qt,Qs)
+     r.def <- n+t-1
+     A1 <- kronecker(matrix(1,1,t),diag(n))
+     A2 <- kronecker(diag(t),matrix(1,1,n))
+     A_delta <- rbind(A1[-1,],A2[-1,])
 
      formula <- Y.real ~ f(ID.area, model="generic1", Cmatrix=R.area.Leroux, constr=TRUE,
                            hyper=list(prec=list(prior=sdunif),beta=list(prior=lunif, initial=0))) +
-                     	 f(ID.year, model="rw1", hyper=list(prec=list(prior=sdunif))) +
+                     	   f(ID.year, model="rw1", hyper=list(prec=list(prior=sdunif))) +
                          f(ID.area.year, model="generic0", Cmatrix=R, rankdef=r.def, constr=TRUE,
                        	   extraconstr=list(A=A_delta, e=rep(0,dim(A_delta)[1])),
                            hyper=list(prec=list(prior=sdunif)))
 
      model <- inla(formula, family="poisson", data=data.temp, E=E.real,
-			 control.fixed=list(mean=0, mean.intercept=0, prec=0.1, prec.intercept=0.001),
-			 control.predictor=list(compute=TRUE, cdf=c(log(1))),
+                   control.fixed=list(mean=0, mean.intercept=0, prec=0.1, prec.intercept=0.001),
+                   control.predictor=list(compute=TRUE, cdf=c(log(1))),
                    control.compute=list(dic=TRUE, cpo=TRUE, waic=TRUE),
                    control.inla=list(strategy=strategy))
 
      dic.list[i] <- model$dic$dic
      waic.list[i] <- model$waic$waic
      
-    if(plot.dic==TRUE) {
-      win.graph()
-      y.lim <- dic.list[i]*c(1/1.01,1.005)
-      plot(1:max.cluster, dic.list, type="l", xlab="Number of spatial clusters", ylab="DIC",
-           main=paste("Model",i,"of",max.cluster), ylim=y.lim)
-      points(1,dic.list[i],pch=19)
-      mtext(paste("Minimun DIC value:",round(min(dic.list,na.rm=T),2)), side=3, line=-2)
-    }
+     if(plot.dic==TRUE) {
+        win.graph()
+        y.lim <- dic.list[i]*c(1/1.01,1.005)
+        plot(1:max.cluster, dic.list, type="l", xlab="Number of spatial clusters", ylab="DIC",
+             main=paste("Model",i,"of",max.cluster), ylim=y.lim)
+        points(1,dic.list[i],pch=19)
+        mtext(paste("Minimun DIC value:",round(min(dic.list,na.rm=T),2)), side=3, line=-2)
+     }
      
 
-    ## Fit separate models with between 2 and the max number of clusters.
-    for(i in 2:max.cluster){
-      
-	j <- n-i+1
-	factor.clust <- as.numeric(as.factor(cluster.prior$cluster.store[j,]))
-	m <- length(unique(factor.clust))
+     ## Fit separate models with between 2 and the max number of clusters.
+     for(i in 2:max.cluster){
+        
+	      j <- n-i+1
+	      factor.clust <- as.numeric(as.factor(cluster.prior$cluster.store[j,]))
+	      m <- length(unique(factor.clust))
+    
+	      data.temp <- data.frame(Y.real=Y.real, E.real=E.real, factor.clust=factor.clust,
+	      				ID.area=rep(1:n,t), ID.year=rep(1:t,each=n),
+	      				ID.clust.year=factor.clust+rep(0:(t-1)*m,each=n))
+    
+	      ## Cluster configuration map ##
+	      cl.nb <- Cluster.neighbours(Carto,factor.clust)
+        # R.area.Leroux <- diag(n)-cl.nb$C
+    
+	      lista <- factor.clust
+	      cluster.map <- unionSpatialPolygons(Carto,lista)
+	      nb2INLA(poly2nb(cluster.map), file="cluster_nb.inla")
+                
+	      g <- inla.read.graph("cluster_nb.inla")
+	      R.clust = matrix(0, g$n, g$n)
+	      for (ii in 1:g$n){
+                  R.clust[ii,ii]=g$nnbs[[ii]]
+                  R.clust[ii,g$nbs[[ii]]]=-1
+	      }
+	      R.clust.Leroux <- diag(dim(R.clust)[1])-R.clust
+	      
+	      R <- kronecker(Qt,R.clust)
+	      n.cluster <- dim(R.clust)[1]
+	      r.def <- n.cluster+t-1
+	      A1 <- kronecker(matrix(1,1,t),diag(n.cluster))
+	      A2 <- kronecker(diag(t),matrix(1,1,n.cluster))
+	      A_delta <- rbind(A1[-1,],A2[-1,])
 
-	data.temp <- data.frame(Y.real=Y.real, E.real=E.real, factor.clust=factor.clust,
-					ID.area=rep(1:n,t), ID.year=rep(1:t,each=n),
-					ID.clust.year=factor.clust+rep(0:(t-1)*m,each=n))
-
-	## Cluster configuration map ##
-	cl.nb <- Cluster.neighbours(Carto,factor.clust)
-#	R.area.Leroux <- diag(n)-cl.nb$C
-
-	lista <- factor.clust
-	cluster.map <- unionSpatialPolygons(Carto,lista)
-	nb2INLA(poly2nb(cluster.map), file="cluster_nb.inla")
-          
-	g <- inla.read.graph("cluster_nb.inla")
-	R.clust = matrix(0, g$n, g$n)
-	for (ii in 1:g$n){
-            R.clust[ii,ii]=g$nnbs[[ii]]
-            R.clust[ii,g$nbs[[ii]]]=-1
-	}
-	R.clust.Leroux <- diag(dim(R.clust)[1])-R.clust
-
-
-     	null.space <- kronecker.null.space(Qt,R.clust)
-     	R <- null.space[[1]]
-     	A_delta <- as.matrix(null.space[[2]])
-
-     	r.def <- dim(A_delta)[1]
-
-	formula <- Y.real ~ factor(factor.clust) + 
-				  f(ID.area, model="generic1", Cmatrix=R.area.Leroux, constr=TRUE, 
-				    hyper=list(prec=list(prior=sdunif),beta=list(prior=lunif, initial=0))) +
-				  f(ID.year, model="rw1", hyper=list(prec=list(prior=sdunif))) +
-                          f(ID.clust.year, model="generic0", Cmatrix=R, rankdef=r.def, constr=TRUE,
-                       	    extraconstr=list(A=A_delta, e=rep(0,dim(A_delta)[1])),
-                            hyper=list(prec=list(prior=sdunif)))
-
-	model <- inla(formula, family="poisson", data=data.temp, E=E.real,
-			  control.fixed=list(mean=0, mean.intercept=0, prec=0.1, prec.intercept=0.001),
-			  control.predictor=list(compute=TRUE, cdf=c(log(1))),
-			  control.compute=list(dic=TRUE, cpo=TRUE, waic=TRUE),
-			  control.inla=list(strategy=strategy))
-
-	dic.list[i] <- model$dic$dic
-	waic.list[i] <- model$waic$waic
-          
-	if(plot.dic==TRUE) {
-		if(dic.list[i]<y.lim[1]) {
-              y.lim[1] <- y.lim[1]-abs(y.lim[1]-dic.list[i])
-            }
-		if(dic.list[i]>y.lim[2]) {
-		  y.lim[2] <- y.lim[2]+abs(y.lim[2]-dic.list[i])
-		}
-		plot(1:max.cluster, dic.list, type="l", xlab="Number of spatial clusters", ylab="DIC",
-		main=paste("Model",i,"of",max.cluster), ylim=y.lim)
-		points(i,dic.list[i],pch=19)
-		mtext(paste("Minimun DIC value:",round(min(dic.list,na.rm=T),2)), side=3, line=-2)
-   	}
-    }
+	      formula <- Y.real ~ factor(factor.clust) + 
+	                          f(ID.area, model="generic1", Cmatrix=R.area.Leroux, constr=TRUE, 
+	                            hyper=list(prec=list(prior=sdunif),beta=list(prior=lunif, initial=0))) +
+	                          f(ID.year, model="rw1", hyper=list(prec=list(prior=sdunif))) +
+                            f(ID.clust.year, model="generic0", Cmatrix=R, rankdef=r.def, constr=TRUE,
+                              extraconstr=list(A=A_delta, e=rep(0,dim(A_delta)[1])),
+                              hyper=list(prec=list(prior=sdunif)))
+    
+	      model <- inla(formula, family="poisson", data=data.temp, E=E.real,
+	                    control.fixed=list(mean=0, mean.intercept=0, prec=0.1, prec.intercept=0.001),
+	                    control.predictor=list(compute=TRUE, cdf=c(log(1))),
+	                    control.compute=list(dic=TRUE, cpo=TRUE, waic=TRUE),
+	                    control.inla=list(strategy=strategy))
+    
+	      dic.list[i] <- model$dic$dic
+	      waic.list[i] <- model$waic$waic
+                
+	      if(plot.dic==TRUE){
+	      	if(dic.list[i]<y.lim[1]) {
+                    y.lim[1] <- y.lim[1]-abs(y.lim[1]-dic.list[i])
+                  }
+	      	if(dic.list[i]>y.lim[2]) {
+	      	  y.lim[2] <- y.lim[2]+abs(y.lim[2]-dic.list[i])
+	      	}
+	      	plot(1:max.cluster, dic.list, type="l", xlab="Number of spatial clusters", ylab="DIC",
+	      	main=paste("Model",i,"of",max.cluster), ylim=y.lim)
+	      	points(i,dic.list[i],pch=19)
+	      	mtext(paste("Minimun DIC value:",round(min(dic.list,na.rm=T),2)), side=3, line=-2)
+	      }
+	  }
   }
   
   cat("\n\n ************* RUNNING FINAL MODEL ************* \n\n")
@@ -151,14 +149,14 @@ time <- system.time({
 		waic.list <- NULL
 	}
 
-  	j <- n+1-best.model
+  j <- n+1-best.model
 	factor.clust <- as.numeric(as.factor(cluster.prior$cluster.store[j,]))
 	m <- length(unique(factor.clust))
 
 	data.temp <- data.frame(Y.real=Y.real, E.real=E.real, factor.clust=factor.clust,
-					ID.area=rep(1:n,t), ID.year=rep(1:t,each=n),
-					ID.area.year=seq(1:(n*t)),
-					ID.clust.year=factor.clust+rep(0:(t-1)*m,each=n))
+	                        ID.area=rep(1:n,t), ID.year=rep(1:t,each=n),
+	                        ID.area.year=seq(1:(n*t)),
+	                        ID.clust.year=factor.clust+rep(0:(t-1)*m,each=n))
 
 	if(lincomb) {
 		lc1 = inla.make.lincomb(Predictor = rep(1/(n*t),n*t))
@@ -192,36 +190,35 @@ time <- system.time({
 		names(lc4) <- paste("spatio.temporal.",as.character(seq(1:(n*t))),sep="")
 
 		all.lc <- c(lc1,lc2,lc3,lc4)
-     }else{
-       all.lc <- NULL
-     }
+  }else{
+    all.lc <- NULL
+  }
      
-          if(best.model==1)
-          {
-    		null.space <- kronecker.null.space(Qt,Qs)
-     		R <- null.space[[1]]
-     		A_delta <- as.matrix(null.space[[2]])
+  if(best.model==1){
+    
+    R <- kronecker(Qt,Qs)
+    r.def <- n+t-1
+    A1 <- kronecker(matrix(1,1,t),diag(n))
+    A2 <- kronecker(diag(t),matrix(1,1,n))
+    A_delta <- rbind(A1[-1,],A2[-1,])
 
-     		r.def <- dim(A_delta)[1]
+    formula <- Y.real ~ f(ID.area, model="generic1", Cmatrix=R.area.Leroux, constr=TRUE,
+                          hyper=list(prec=list(prior=sdunif),beta=list(prior=lunif, initial=0))) +
+                     	 	f(ID.year, model="rw1", hyper=list(prec=list(prior=sdunif))) +
+                        f(ID.area.year, model="generic0", Cmatrix=R, rankdef=r.def, constr=TRUE,
+                          extraconstr=list(A=A_delta, e=rep(0,dim(A_delta)[1])),
+                          hyper=list(prec=list(prior=sdunif)))
 
-     		formula <- Y.real ~ f(ID.area, model="generic1", Cmatrix=R.area.Leroux, constr=TRUE,
-                           	    hyper=list(prec=list(prior=sdunif),beta=list(prior=lunif, initial=0))) +
-                     	 	  f(ID.year, model="rw1", hyper=list(prec=list(prior=sdunif))) +
-                         	  f(ID.area.year, model="generic0", Cmatrix=R, rankdef=r.def, constr=TRUE,
-                       	   	    extraconstr=list(A=A_delta, e=rep(0,dim(A_delta)[1])),
-                           	    hyper=list(prec=list(prior=sdunif)))
-
-     		model.final <- inla(formula, family="poisson", data=data.temp, E=E.real,
-					  control.fixed=list(mean=0, mean.intercept=0, prec=0.1, prec.intercept=0.001),
-			 	  	  control.predictor=list(compute=TRUE, cdf=c(log(1))),
-                   	  	  control.compute=list(dic=TRUE, cpo=TRUE, waic=TRUE),
-                   	  	  control.inla=list(strategy=strategy))
-
-          }else{
+    model.final <- inla(formula, family="poisson", data=data.temp, E=E.real,
+                        control.fixed=list(mean=0, mean.intercept=0, prec=0.1, prec.intercept=0.001),
+                        control.predictor=list(compute=TRUE, cdf=c(log(1))),
+                   	  	control.compute=list(dic=TRUE, cpo=TRUE, waic=TRUE),
+                   	  	control.inla=list(strategy=strategy))
+  }else{
 
 		## Cluster configuration map ##
 		cl.nb <- Cluster.neighbours(Carto,factor.clust)
-#		R.area.Leroux <- diag(n)-cl.nb$C
+		# R.area.Leroux <- diag(n)-cl.nb$C
 
 		lista <- factor.clust
 		cluster.map <- unionSpatialPolygons(Carto,lista)
@@ -235,20 +232,20 @@ time <- system.time({
 		}
 		R.clust.Leroux <- diag(dim(R.clust)[1])-R.clust
 
-
-     		null.space <- kronecker.null.space(Qt,R.clust)
-     		R <- null.space[[1]]
-     		A_delta <- as.matrix(null.space[[2]])
-
-     		r.def <- dim(A_delta)[1]
+		R <- kronecker(Qt,R.clust)
+		n.cluster <- dim(R.clust)[1]
+		r.def <- n.cluster+t-1
+		A1 <- kronecker(matrix(1,1,t),diag(n.cluster))
+		A2 <- kronecker(diag(t),matrix(1,1,n.cluster))
+		A_delta <- rbind(A1[-1,],A2[-1,])
 
 		formula <- Y.real ~ factor(factor.clust) + 
-					  f(ID.area, model="generic1", Cmatrix=R.area.Leroux, constr=TRUE, 
-				 	   hyper=list(prec=list(prior=sdunif),beta=list(prior=lunif, initial=0))) +
-				 	 f(ID.year, model="rw1", hyper=list(prec=list(prior=sdunif))) +
-                         	 f(ID.clust.year, model="generic0", Cmatrix=R, rankdef=r.def, constr=TRUE,
-                       	  	  extraconstr=list(A=A_delta, e=rep(0,dim(A_delta)[1])),
-                           	 hyper=list(prec=list(prior=sdunif)))
+					              f(ID.area, model="generic1", Cmatrix=R.area.Leroux, constr=TRUE, 
+					                hyper=list(prec=list(prior=sdunif),beta=list(prior=lunif, initial=0))) +
+				 	              f(ID.year, model="rw1", hyper=list(prec=list(prior=sdunif))) +
+                        f(ID.clust.year, model="generic0", Cmatrix=R, rankdef=r.def, constr=TRUE,
+                          extraconstr=list(A=A_delta, e=rep(0,dim(A_delta)[1])),
+                          hyper=list(prec=list(prior=sdunif)))
 
 		## Compute posterior distributions for the fixed effects ##
 		beta <- names(table(factor.clust))[-1]
@@ -262,23 +259,23 @@ time <- system.time({
 		}
 		
 		model.final <- inla(formula, family="poisson", data=data.temp, E=E.real,
-			 		  control.fixed=list(mean=0, mean.intercept=0, prec=0.1, prec.intercept=0.001),
-			 		  control.predictor=list(compute=TRUE, cdf=c(log(1))),
+		                    control.fixed=list(mean=0, mean.intercept=0, prec=0.1, prec.intercept=0.001),
+		                    control.predictor=list(compute=TRUE, cdf=c(log(1))),
                    		  control.compute=list(dic=TRUE, cpo=TRUE, waic=TRUE),
                    		  control.inla=list(strategy=strategy),
-					  lincomb=all.lc)
-          }
+		                    lincomb=all.lc)
+  }
 
-          if(plot.dic==TRUE) {
-            plot(1:max.cluster, dic.list, type="l", xlab="Number of spatial clusters", ylab="DIC",
-                 main=paste("Model",best.model,"of",max.cluster), ylim=y.lim)
-                 points(which.min(dic.list),min(dic.list), pch=19, col="red")
-                 lines(rep(which.min(dic.list),2),c(0,min(dic.list)), lty=2, col="red")
-                 axis(1, at=which.min(dic.list), labels=which.min(dic.list), col.axis="red")
-                 mtext(paste("Minimun DIC value:",round(min(dic.list,na.rm=T),2)), side=3, line=-2, col="red")
-          }
+	if(plot.dic==TRUE) {
+	  plot(1:max.cluster, dic.list, type="l", xlab="Number of spatial clusters", ylab="DIC",
+	       main=paste("Model",best.model,"of",max.cluster), ylim=y.lim)
+	  points(which.min(dic.list),min(dic.list), pch=19, col="red")
+	  lines(rep(which.min(dic.list),2),c(0,min(dic.list)), lty=2, col="red")
+	  axis(1, at=which.min(dic.list), labels=which.min(dic.list), col.axis="red")
+	  mtext(paste("Minimun DIC value:",round(min(dic.list,na.rm=T),2)), side=3, line=-2, col="red")
+  }
 })
 
-     results <- list(model.final=model.final, factor.clust=factor.clust, dic.list=dic.list, waic.list=waic.list, cpu.time=time[3])
-     return(results)
+  results <- list(model.final=model.final, factor.clust=factor.clust, dic.list=dic.list, waic.list=waic.list, cpu.time=time[3])
+  return(results)
 }

@@ -102,7 +102,7 @@ R <- kronecker(Rt,Rs) ## Interaction structure matrix
 r.def <- n+t-1
 A1 <- kronecker(matrix(1,1,t),diag(n))
 A2 <- kronecker(diag(t),matrix(1,1,n))
-A.constr <- rbind(A1,A2)
+A.constr <- rbind(A1[-1,],A2[-1,])
 
 Data.INLA <- data.frame(O=Data.INCI$obs, E=Data.INCI$exp,
                         ID.area=rep(1:n,t), ID.year=rep(1:t,each=n),
@@ -112,7 +112,7 @@ formula <- O ~ f(ID.area, model="generic1", Cmatrix = R.Leroux, constr=TRUE,
                  hyper=list(prec=list(prior=sdunif),beta=list(prior=lunif, initial=0))) +
                f(ID.year, model="rw1", hyper=list(prec=list(prior=sdunif))) +
                f(ID.area.year, model="generic0", Cmatrix=R, rankdef=r.def, constr=TRUE,
-                 extraconstr=list(A=A.constr, e=rep(0,n+t)),
+                 extraconstr=list(A=A.constr, e=rep(0,n+t-2)),
                  hyper=list(prec=list(prior=sdunif)))
 
 LCAR.model <- inla(formula, family="poisson", data=Data.INLA, E=E,
@@ -137,7 +137,7 @@ cluster.conf <- clustering.function(data=matrix(log(SMR.prior$SMR),n,1), W)
 
 ## Stage 2: Select the best model according the Deviance Information Criteria (DIC) ##
 source("TLmodel1a.R")
-#source("TLmodel1b.R")
+# source("TLmodel1b.R")
 
 TLModel1a <- model.selection(cluster.prior=cluster.conf, Qs=Rs, Qt=Rt, Carto=Carto.COM,
                              Y.real=Data.INCI$obs, E.real=Data.INCI$exp,
@@ -199,7 +199,7 @@ source("TLmodel2a.R")
 
 TLModel2a <- model.selection(cluster.prior=cluster.conf, Qs=Rs, Qt=Rt, Carto=Carto.COM,
                              Y.real=Data.INCI$obs, E.real=Data.INCI$exp,
-                             lincomb=TRUE,  plot.dic=TRUE, strategy="simplified.laplace")
+                             lincomb=TRUE, plot.dic=TRUE, strategy="simplified.laplace")
 
 str(TLModel2a,1)
 summary(TLModel2a$model.final)
@@ -232,10 +232,10 @@ cluster.conf <- clusteringST.function(data=log(SMR.prior+0.00001), W)
 
 
 ## Stage 2: Select the best model according the Deviance Information Criteria (DIC) ##
-#source("OptionI.R")
+# source("OptionI.R")
 source("OptionII.R")
-#source("OptionIII.R")
-#source("OptionIV.R")
+# source("OptionIII.R")
+# source("OptionIV.R")
 
 
 STcluster.model <- model.selection(cluster.prior=cluster.conf, Qs=Rs, Qt=Rt, Carto=Carto.COM,
