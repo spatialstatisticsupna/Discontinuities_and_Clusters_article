@@ -1,5 +1,5 @@
 # Estimating disease risks in the presence of local discontinuities and clusters
-This repository contains the R code to fit with INLA the spatial and spatio-temporal models described in the work entitled _"A two-stage approach to estimate spatial and spatio-temporal disease risks in the presence of local discontinuities and clusters"_ (Adin et al., 2019).
+This repository contains the R code to fit with INLA the spatial and spatio-temporal models described in the work entitled _"A two-stage approach to estimate spatial and spatio-temporal disease risks in the presence of local discontinuities and clusters"_ [(Adin et al., 2019)](https://doi.org/10.1177/0962280218767975).
 
 
 ## Table of contents
