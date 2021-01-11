@@ -76,6 +76,9 @@ R code to fit with INLA (http://www.r-inla.org/) the two-stage spatial and spati
   Function to create the neighbourhood matrix of areas within each cluster.
 
 
+*_2021/01/11: Slight modifications have been introduced in order to be compatible with the 20.12.10 testing version of INLA. More precisely, we eliminate the redundant constraints in the `extraconstr` argument of the `INLA::inla()` function._
+
+
 # References
 [Adin, A., Lee, D., Goicoa, T., and Ugarte, M.D. (2019). A two-stage approach to estimate spatial and spatio-temporal disease risks in the presence of local discontinuities and clusters. _Statistical Methods in Medical Research_, __28(9)__, 2595-2613.](https://doi.org/10.1177/0962280218767975)
 
