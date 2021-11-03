@@ -84,6 +84,6 @@ This work has been supported by the Spanish Ministry of Economy and Competitiven
 
 
 # References
-[Adin, A., Lee, D., Goicoa, T., and Ugarte, M.D. (2019). A two-stage approach to estimate spatial and spatio-temporal disease risks in the presence of local discontinuities and clusters. _Statistical Methods in Medical Research, __28(9)__, 2595-2613.](https://doi.org/10.1177/0962280218767975)
+[Adin, A., Lee, D., Goicoa, T., and Ugarte, M.D. (2019). A two-stage approach to estimate spatial and spatio-temporal disease risks in the presence of local discontinuities and clusters. _Statistical Methods in Medical Research_, __28(9)__, 2595-2613.](https://doi.org/10.1177/0962280218767975)
 
-[Anderson, C., Lee, D., and Dean, N. (2014). Identifying clusters in Bayesian disease mapping. _Biostatistics, __15__, 457–469.](https://doi.org/10.1093/biostatistics/kxu005)
+[Anderson, C., Lee, D., and Dean, N. (2014). Identifying clusters in Bayesian disease mapping. _Biostatistics_, __15__, 457–469.](https://doi.org/10.1093/biostatistics/kxu005)
