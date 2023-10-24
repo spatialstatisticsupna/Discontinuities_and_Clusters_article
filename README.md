@@ -17,7 +17,7 @@ the Basque Country during the period 2000-2008.
   
   This .Rdata contains the following objects:
 	- **_Data_**: `data.frame` object with the number of observed and expected cases (_'obs'_ and _'exp'_ variables, respectively) and standardized mortality ratio (_'SMR'_) for each province (_'prov'_) and time period (_'year'_) for stomach cancer mortality data.
-	- **_Carto.ESP_**: `SpatialPolygonsDataFrame` object with the cartography of the 47 continental Spanish provinces.
+	- **_Carto.ESP_**: `sf` object with the cartography of the 47 continental Spanish provinces.
 	- **_W_**: Spatial adjacency matrix of the Spanish provinces.
 
 
@@ -25,7 +25,7 @@ the Basque Country during the period 2000-2008.
   
   This .Rdata contains the following objects:
 	- **_Data.INCI_** and **_Data.MORT_**: `data.frame` objects with the number of observed and expected cases (_'obs'_ and _'exp'_ variables, respectively) and standardized incidence/mortality ratio (_'SMR'_) for each administrative region (_'region'_) and time period (_'year'_) for brain cancer incidence and mortality data.
-	- **_Carto.COM_**: `SpatialPolygonsDataFrame` object with the cartography of the 27 administrative regions of Navarre and the Basque Country.
+	- **_Carto.COM_**: `sf` object with the cartography of the 27 administrative regions of Navarre and the Basque Country.
 	- **_W_**: Spatial adjacency matrix of the administrative regions.
 
 
