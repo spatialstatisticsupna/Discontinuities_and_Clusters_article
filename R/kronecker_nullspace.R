@@ -4,8 +4,8 @@
 ######################################################################################
 kronecker.null.space <- function(Matrix1, Matrix2){
 
-M1.sparse <- as(Matrix1, "dgTMatrix")
-M2.sparse <- as(Matrix2, "dgTMatrix")
+M1.sparse <- as(Matrix1, "Matrix")
+M2.sparse <- as(Matrix2, "Matrix")
 
 n1 <- dim(M1.sparse)[1]
 n2 <- dim(M2.sparse)[1]
@@ -34,18 +34,18 @@ if (sum(eigen.M2$values<1e-8)>0) {
 
 ## Null-space of Kronecker product ##
 if (mult.M1>0) {
-	kronecker.null.space.1 <-  as(null.space.M1[,1] %x% eigen.M2$vectors, "dgTMatrix")
+	kronecker.null.space.1 <-  as(null.space.M1[,1] %x% eigen.M2$vectors, "Matrix")
 	if (mult.M1>1) {
 		for (i in 2:mult.M1) {
-			kronecker.null.space.1 <- cBind(kronecker.null.space.1, null.space.M1[,i] %x% eigen.M2$vectors)
+			kronecker.null.space.1 <- cbind(kronecker.null.space.1, null.space.M1[,i] %x% eigen.M2$vectors)
 		}
 	}
 
 	if (mult.M2>0) {
-		kronecker.null.space.2 <-  as(eigen.M1$vectors[,-((n1-mult.M1+1):n1)] %x% null.space.M2[,1], "dgTMatrix")
+		kronecker.null.space.2 <-  as(eigen.M1$vectors[,-((n1-mult.M1+1):n1)] %x% null.space.M2[,1], "Matrix")
 		if (mult.M2>1) {
 			for (i in 2:mult.M2) {
-				kronecker.null.space.2 <- cBind(kronecker.null.space.2, eigen.M1$vectors[,-((n1-mult.M1+1):n1)] %x% null.space.M2[,i])
+				kronecker.null.space.2 <- cbind(kronecker.null.space.2, eigen.M1$vectors[,-((n1-mult.M1+1):n1)] %x% null.space.M2[,i])
 			}
 		}
 	} else {
@@ -56,10 +56,10 @@ if (mult.M1>0) {
 	kronecker.null.space.1 <- NULL
 
 	if (mult.M2>0) {
-		kronecker.null.space.2 <-  as(eigen.M1$vectors %x% null.space.M2[,1], "dgTMatrix")
+		kronecker.null.space.2 <-  as(eigen.M1$vectors %x% null.space.M2[,1], "Matrix")
 		if (mult.M2>1) {
 			for (i in 2:mult.M2) {
-				kronecker.null.space.2 <- cBind(kronecker.null.space.2, eigen.M1$vectors %x% null.space.M2[,i])
+				kronecker.null.space.2 <- cbind(kronecker.null.space.2, eigen.M1$vectors %x% null.space.M2[,i])
 			}
 		}
 	} else {
@@ -68,7 +68,7 @@ if (mult.M1>0) {
 }
 
 if(!is.null(kronecker.null.space.1) & !is.null(kronecker.null.space.2)) {
-	kronecker.null.space <- cBind(kronecker.null.space.1,kronecker.null.space.2)
+	kronecker.null.space <- cbind(kronecker.null.space.1,kronecker.null.space.2)
 } else if(!is.null(kronecker.null.space.1)) {
 	kronecker.null.space <- kronecker.null.space.1
 } else if(!is.null(kronecker.null.space.2)) {
@@ -96,8 +96,8 @@ result
 check.kronecker.null.space <- function(result) {
 
 ## Check if the input object is the a list with the structure of the "kronecker.null.space" function result ##
-if(class(result[[1]])!="dgTMatrix")
-	stop("The first element of the input object is not of class dgTMatrix")
+if(attr(class(result[[1]]),"package")!="Matrix")
+	stop("The first element of the input object is not of class Matrix")
 
 if(is.null(result[[2]]))
 	stop("This Kronecker product matrix null-space has dimension 0")
@@ -122,7 +122,7 @@ triple.kronecker.null.space <- function(Matrix1, Matrix2, Matrix3){
 aux <- kronecker.null.space(Matrix1, Matrix2)
 
 M1.sparse <- aux[[1]]
-M2.sparse <- as(Matrix3, "dgTMatrix")
+M2.sparse <- as(Matrix3, "Matrix")
 
 n1 <- dim(M1.sparse)[1]
 n2 <- dim(M2.sparse)[1]
@@ -150,18 +150,18 @@ if (sum(eigen.M2$values<1e-8)>0) {
 
 ## Null-space of Kronecker product ##
 if (mult.M1>0) {
-	kronecker.null.space.1 <-  as(null.space.M1[,1] %x% eigen.M2$vectors, "dgTMatrix")
+	kronecker.null.space.1 <-  as(null.space.M1[,1] %x% eigen.M2$vectors, "Matrix")
 	if (mult.M1>1) {
 		for (i in 2:mult.M1) {
-			kronecker.null.space.1 <- cBind(kronecker.null.space.1, null.space.M1[,i] %x% eigen.M2$vectors)
+			kronecker.null.space.1 <- cbind(kronecker.null.space.1, null.space.M1[,i] %x% eigen.M2$vectors)
 		}
 	}
 
 	if (mult.M2>0) {
-		kronecker.null.space.2 <-  as(eigen.M1$vectors[,-((n1-mult.M1+1):n1)] %x% null.space.M2[,1], "dgTMatrix")
+		kronecker.null.space.2 <-  as(eigen.M1$vectors[,-((n1-mult.M1+1):n1)] %x% null.space.M2[,1], "Matrix")
 		if (mult.M2>1) {
 			for (i in 2:mult.M2) {
-				kronecker.null.space.2 <- cBind(kronecker.null.space.2, eigen.M1$vectors[,-((n1-mult.M1+1):n1)] %x% null.space.M2[,i])
+				kronecker.null.space.2 <- cbind(kronecker.null.space.2, eigen.M1$vectors[,-((n1-mult.M1+1):n1)] %x% null.space.M2[,i])
 			}
 		}
 	} else {
@@ -172,10 +172,10 @@ if (mult.M1>0) {
 	kronecker.null.space.1 <- NULL
 
 	if (mult.M2>0) {
-		kronecker.null.space.2 <-  as(eigen.M1$vectors %x% null.space.M2[,1], "dgTMatrix")
+		kronecker.null.space.2 <-  as(eigen.M1$vectors %x% null.space.M2[,1], "Matrix")
 		if (mult.M2>1) {
 			for (i in 2:mult.M2) {
-				kronecker.null.space.2 <- cBind(kronecker.null.space.2, eigen.M1$vectors %x% null.space.M2[,i])
+				kronecker.null.space.2 <- cbind(kronecker.null.space.2, eigen.M1$vectors %x% null.space.M2[,i])
 			}
 		}
 	} else {
@@ -184,7 +184,7 @@ if (mult.M1>0) {
 }
 
 if(!is.null(kronecker.null.space.1) & !is.null(kronecker.null.space.2)) {
-	kronecker.null.space <- cBind(kronecker.null.space.1,kronecker.null.space.2)
+	kronecker.null.space <- cbind(kronecker.null.space.1,kronecker.null.space.2)
 } else if(!is.null(kronecker.null.space.1)) {
 	kronecker.null.space <- kronecker.null.space.1
 } else if(!is.null(kronecker.null.space.2)) {

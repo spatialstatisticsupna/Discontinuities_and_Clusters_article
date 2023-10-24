@@ -89,8 +89,8 @@ time <- system.time({
        cl.nb <- Cluster.neighbours(Carto,factor.clust)
        R.area.Leroux <- diag(n)-cl.nb$C
       
-       lista <- factor.clust
-       cluster.map <- unionSpatialPolygons(Carto,lista)
+       Carto$factor.clust <- factor.clust
+       cluster.map <- aggregate(Carto[,"geometry"], by=list(factor.clust=Carto$factor.clust), head)
        nb2INLA(poly2nb(cluster.map), file="cluster_nb.inla")
                
        g <- inla.read.graph("cluster_nb.inla")
@@ -230,8 +230,8 @@ time <- system.time({
 		cl.nb <- Cluster.neighbours(Carto,factor.clust)
 		R.area.Leroux <- diag(n)-cl.nb$C
 
-		lista <- factor.clust
-		cluster.map <- unionSpatialPolygons(Carto,lista)
+		Carto$factor.clust <- factor.clust
+		cluster.map <- aggregate(Carto[,"geometry"], by=list(factor.clust=Carto$factor.clust), head)
 		nb2INLA(poly2nb(cluster.map), file="cluster_nb.inla")
           
 		g <- inla.read.graph("cluster_nb.inla")

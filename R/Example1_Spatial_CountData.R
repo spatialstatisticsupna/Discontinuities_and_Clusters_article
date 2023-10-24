@@ -17,11 +17,14 @@ rm(list=ls())
 #############################################
 #### Two-stage SPATIAL cluster modelling ####
 #############################################
-library(INLA)
-library(spdep)
-library(maptools)
-library(RColorBrewer)
 library(Hmisc)
+library(INLA)
+library(RColorBrewer)
+library(sf)
+library(spdep)
+library(tmap)
+
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 
 
 ##############################################
@@ -33,12 +36,18 @@ str(Data)
 
 ## Map of the standardized mortality ratio (SMR) for the year 2013 ##
 Data.2013 <- Data[Data$year==2013,]
-Carto.ESP$SMR.2013 <- Data.2013$SMR
+carto.SMR <- merge(Carto.ESP, Data.2013)
 
+paleta <- brewer.pal(6,"YlOrRd")
 values <- c(0.55,0.67,0.82,1,1.22,1.49,1.82)
-colorkeypval <- list(labels=as.character(values),at=(0:6)/6)
 
-spplot(Carto.ESP, zcol="SMR.2013", main="", col.regions=brewer.pal(6,"YlOrRd"), colorkey=colorkeypval, at=values)
+Map.SMR <- tm_shape(carto.SMR) +
+  tm_polygons(col="SMR", palette=paleta, legend.show=T, legend.reverse=T,
+              style="fixed", breaks=values, interval.closure="left") + 
+  tm_layout(main.title="Stomach cancer mortality data in Spanish provinces during the year 2013",
+            main.title.position="left", main.title.size=0.8,
+            legend.outside=T, legend.outside.position="right", legend.frame=F)
+print(Map.SMR)
 
 
 ##########################################
@@ -67,6 +76,7 @@ lunif = "expression:
   logdens = lgamma(a+b)-lgamma(a)-lgamma(b)+(a-1)*log(beta)+(b-1)*log(1-beta);
   log_jacobian = log(beta*(1-beta));
   return(logdens+log_jacobian)"
+
 
 ################
 ## LCAR model ##
@@ -139,17 +149,20 @@ beta.prob <- data.frame(ID=unique(Model1$factor.clust),
                                1-inla.pmarginal(alpha.star,Model1$model.final$marginals.lincomb.derived$'beta41'),
                                1-inla.pmarginal(alpha.star,Model1$model.final$marginals.lincomb.derived$'beta46')))
 
-cluster.map <- unionSpatialPolygons(Carto.ESP,Model1$factor.clust)
+Carto.ESP$ID <- Model1$factor.clust
+cluster.map <- aggregate(Carto.ESP[,"geometry"], by=list(ID=Carto.ESP$ID), head)
+cluster.map <- merge(cluster.map,beta.prob)
 
-beta <- data.frame(ID=names(cluster.map))
-beta <- merge(beta,beta.prob)
-beta$prob2 <- cut2(beta$prob,c(0,0.05,0.1,0.2,0.8,0.9,0.95,1))
-rownames(beta) <- as.character(beta$ID)
+paleta <- brewer.pal(9,"RdYlGn")[c(9,8,7,5,3,2,1)]
+values <- c(0,0.05,0.1,0.2,0.8,0.9,0.95,1)
 
-cluster.map.SPDF <- SpatialPolygonsDataFrame(cluster.map,beta)
-spplot(cluster.map.SPDF, "prob2", names.attr="", cuts=6, col.regions=brewer.pal(9,"RdYlGn")[c(9,8,7,5,3,2,1)],
-       colorkey=list(labels=list(at=c(.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5),labels = c("0","0.05","0.1","0.2","0.8","0.9","0.95","1"))),
-       main=expression(Pr(beta[j]>0 ~"|"~ O)))
+Map.cluster <- tm_shape(cluster.map) +
+  tm_polygons(col="prob", palette=paleta, title="", legend.show=T, legend.reverse=T,
+              style="fixed", breaks=values, interval.closure="left") + 
+  tm_layout(main.title=expression(Pr(beta[j]>0 ~"|"~ O)),
+            main.title.position=0.3, main.title.size=1,
+            legend.outside=T, legend.outside.position="right", legend.frame=F)
+print(Map.cluster)
 
 
 #############
@@ -176,17 +189,23 @@ summary(Model2$model.final)
 
 
 ## Significant clusters: 
-cl.prob <- unlist(lapply(Model2$model.final$marginals.random$clust, function(x) 1-inla.pmarginal(0,x)))
+cl.prob <- data.frame(ID=rownames(Model2$model.final$summary.random$clust),
+                      prob=unlist(lapply(Model2$model.final$marginals.random$clust, function(x) 1-inla.pmarginal(0,x))))
 
-ID <- as.character(Model2$factor.clust)
-ID[nchar(ID)==1] <- paste("0",ID,sep="")[nchar(ID)==1]
+Carto.ESP$ID <- Model2$factor.clust
+cluster.map <- aggregate(Carto.ESP[,"geometry"], by=list(ID=Carto.ESP$ID), head)
+cluster.map$prob <- unlist(lapply(Model2$model.final$marginals.random$clust, function(x) 1-inla.pmarginal(0,x)))
 
-cluster.map <- unionSpatialPolygons(Carto.ESP,ID)
-cluster.map$cl.prob <- cut2(cl.prob,c(0,0.05,0.1,0.2,0.8,0.9,0.95,1))
+paleta <- brewer.pal(9,"RdYlGn")[c(9,8,7,5,3,2,1)]
+values <- c(0,0.05,0.1,0.2,0.8,0.9,0.95,1)
 
-spplot(cluster.map, "cl.prob", names.attr="", cuts=6, col.regions=brewer.pal(9,"RdYlGn")[c(9,8,7,5,3,2,1)],
-             colorkey=list(labels=list(at=c(.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5),labels = c("0","0.05","0.1","0.2","0.8","0.9","0.95","1"))),
-             main=expression(Pr(psi[j(i)]>0 ~"|"~ O)))
+Map.cluster <- tm_shape(cluster.map) +
+  tm_polygons(col="prob", palette=paleta, title="", legend.show=T, legend.reverse=T,
+              style="fixed", breaks=values, interval.closure="left") + 
+  tm_layout(main.title=expression(Pr(psi[j(i)]>0 ~"|"~ O)),
+            main.title.position=0.3, main.title.size=1,
+            legend.outside=T, legend.outside.position="right", legend.frame=F)
+print(Map.cluster)
 
 
 ###################################
@@ -198,4 +217,4 @@ data.frame(mean.deviance=c(LCAR.model$dic$mean.deviance,Model1$model.final$dic$m
            WAIC=c(LCAR.model$waic$waic,Model1$model.final$waic$waic,Model2$model.final$waic$waic),
            LS=c(-sum(log(LCAR.model$cpo$cpo)),-sum(log(Model1$model.final$cpo$cpo)),-sum(log(Model2$model.final$cpo$cpo))),
            row.names=c("LCAR model", "Model 1", "Model 2"),
-           signif.clusters=c(NA,sum(beta$prob>0.95 | beta$prob<0.05),sum(cl.prob>0.95 | cl.prob<0.05)))
+           signif.clusters=c(NA,sum(beta.prob$prob>0.95 | beta.prob$prob<0.05),sum(cl.prob$prob>0.95 | cl.prob$prob<0.05)))

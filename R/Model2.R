@@ -42,9 +42,8 @@ time <- system.time({
                            hyper=list(prec=list(prior=sdunif),beta=list(prior=lunif, initial=0)))
      
      model  =  inla(formula, family="poisson", data=data.temp, E=E.real,
-          control.results=list(return.marginals.predictor=TRUE),
           control.fixed=list(mean=0, mean.intercept=0, prec=0.1, prec.intercept=0.001),
-          control.compute=list(dic=TRUE, mlik=TRUE, cpo=TRUE, waic=TRUE),
+          control.compute=list(dic=TRUE, mlik=TRUE, cpo=TRUE, waic=TRUE, return.marginals.predictor=T),
           control.predictor=list(compute=TRUE, cdf=c(log(1))),
           control.inla=list(strategy = strategy, npoints = 21))
 
@@ -73,8 +72,8 @@ time <- system.time({
           cl.nb <- Cluster.neighbours(Carto,factor.clust)
           R.area.Leroux <- diag(n)-cl.nb$C
 
-          lista <- factor.clust
-          cluster.map <- unionSpatialPolygons(Carto,lista)
+          Carto$factor.clust <- factor.clust
+          cluster.map <- aggregate(Carto[,"geometry"], by=list(factor.clust=Carto$factor.clust), head)
           nb2INLA(poly2nb(cluster.map), file="cluster_nb.inla")
           
           g <- inla.read.graph("cluster_nb.inla")
@@ -177,8 +176,8 @@ time <- system.time({
           cl.nb <- Cluster.neighbours(Carto,factor.clust)
 	    R.area.Leroux <- diag(n)-cl.nb$C
             
-          lista <- factor.clust
-          cluster.map <- unionSpatialPolygons(Carto,lista)
+          Carto$factor.clust <- factor.clust
+          cluster.map <- aggregate(Carto[,"geometry"], by=list(factor.clust=Carto$factor.clust), head)
           nb2INLA(poly2nb(cluster.map), file="cluster_nb.inla")
             
           g <- inla.read.graph("cluster_nb.inla")

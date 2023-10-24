@@ -17,11 +17,14 @@ rm(list=ls())
 #####################################################
 #### Two-stage SPATIO-TEMPORAL cluster modelling ####
 #####################################################
-library(INLA)
-library(spdep)
-library(maptools)
-library(RColorBrewer)
 library(Hmisc)
+library(INLA)
+library(RColorBrewer)
+library(sf)
+library(spdep)
+library(tmap)
+
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 
 
 ##############################################
@@ -35,6 +38,7 @@ load("../data/BrainCancer_MUN.Rdata")
 str(Data.INCI)
 str(Data.MORT)
 
+
 ## Map of the standardized incidence ratio (SIR) for the period 2000-2008 ##
 n <- length(unique(Data.INCI$region)) # n <- 27
 t <- length(unique(Data.INCI$year))   # t <- 9
@@ -43,16 +47,22 @@ t.to <- max(unique(Data.INCI$year))   # t.to <- 2008
 
 SMR.matrix <- matrix(Data.INCI$SMR,n,t,byrow=F)
 SMR.data.frame <- data.frame(Carto.COM$region,SMR.matrix)
-colnames(SMR.data.frame)<- c("region",paste("SMR",seq(t.from,t.to),sep=""))
-attr(Carto.COM, "data") <- merge(attr(Carto.COM,"data"), SMR.data.frame)
+colnames(SMR.data.frame) <- c("region",paste("SMR",seq(t.from,t.to),sep=""))
+
+carto.SMR <- merge(Carto.COM, SMR.data.frame)
 
 paleta <- brewer.pal(8,"YlOrRd")
 values <- c(0,0.74,0.82,0.90,1,1.11,1.22,1.35,4.5)
-colorkeypval <- list(labels=as.character(values),at=(0:8)/8)
 
-spplot(obj=Carto.COM, zcol=paste("SMR",seq(t.from,t.to),sep=""), col.regions=paleta, main="",
-       names.attr=as.character(seq(t.from,t.to)), axes=TRUE, at=values,
-       as.table=TRUE, layout=c(3,3), colorkey=colorkeypval)
+Map.SMR <- tm_shape(carto.SMR) +
+  tm_polygons(col=paste("SMR",seq(t.from,t.to),sep=""),
+              palette=paleta, legend.show=T, legend.reverse=T,
+              style="fixed", breaks=values, interval.closure="left") + 
+  tm_layout(main.title="Brain cancer incidence data", main.title.position=0.2, panel.label.size=1.5,
+            legend.outside=T, legend.outside.position="right", legend.frame=F,
+            panel.labels=paste("Year",seq(t.from,t.to)),
+            legend.outside.size=0.3, outer.margins=c(0.0,0.03,0.01,0))
+print(Map.SMR)
 
 
 ############################################################################
@@ -69,10 +79,10 @@ spplot(obj=Carto.COM, zcol=paste("SMR",seq(t.from,t.to),sep=""), col.regions=pal
 ##   - Option II, III and IV (two-level random effects)                   ##
 ############################################################################
 
-Rs <- diag(apply(W,2,sum))-W  ## Spatial neighborhood matrix
+Rs <- as(diag(apply(W,2,sum))-W,"Matrix")  ## Spatial neighborhood matrix
 
 D1 <- diff(diag(t),differences=1) ## RW1 structure matrix
-Rt <- t(D1)%*%D1
+Rt <- as(t(D1)%*%D1,"Matrix")
 
 ## Hyperprior distributions using the "expression()" function
 ## - Unif(0,Inf) for standard deviations
@@ -94,7 +104,7 @@ return(logdens+log_jacobian)"
 ####################################
 ## Type IV interaction LCAR model ##
 ####################################
-R.Leroux <- diag(n)-Rs
+R.Leroux <- Diagonal(n)-Rs
 
 R <- kronecker(Rt,Rs) ## Interaction structure matrix
 
@@ -167,18 +177,21 @@ beta.prob <- data.frame(ID=unique(TLModel1a$factor.clust),
                                1-inla.pmarginal(alpha.star,TLModel1a$model.final$marginals.lincomb.derived$'beta7'),
                                1-inla.pmarginal(alpha.star,TLModel1a$model.final$marginals.lincomb.derived$'beta8')))
 
-cluster.map <- unionSpatialPolygons(Carto.COM,TLModel1a$factor.clust)
 
-beta <- data.frame(ID=names(cluster.map))
-beta <- merge(beta,beta.prob)
-beta$prob2 <- cut2(beta$prob,c(0,0.05,0.1,0.2,0.8,0.9,0.95,1))
-rownames(beta) <- as.character(beta$ID)
+Carto.COM$ID <- TLModel1a$factor.clust
+cluster.map <- aggregate(Carto.COM[,"geometry"], by=list(ID=Carto.COM$ID), head)
+cluster.map <- merge(cluster.map,beta.prob)
 
-cluster.map.SPDF <- SpatialPolygonsDataFrame(cluster.map,beta)
+paleta <- brewer.pal(9,"RdYlGn")[c(9,8,7,5,3,2,1)]
+values <- c(0,0.05,0.1,0.2,0.8,0.9,0.95,1)
 
-spplot(cluster.map.SPDF, "prob2", names.attr="", cuts=6, col.regions=brewer.pal(9,"RdYlGn")[c(9,8,7,5,3,2,1)],
-       colorkey=list(labels=list(at=c(.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5),labels = c("0","0.05","0.1","0.2","0.8","0.9","0.95","1"))),
-       main=expression(Pr(beta[j]>0 ~"|"~ O)))
+Map.cluster <- tm_shape(cluster.map) +
+  tm_polygons(col="prob", palette=paleta, title="", legend.show=T, legend.reverse=T,
+              style="fixed", breaks=values, interval.closure="left") + 
+  tm_layout(main.title=expression(Pr(beta[j]>0 ~"|"~ O)),
+            main.title.position=0.3, main.title.size=1,
+            legend.outside=T, legend.outside.position="right", legend.frame=F)
+print(Map.cluster)
 
 
 ###############################
@@ -205,19 +218,24 @@ str(TLModel2a,1)
 summary(TLModel2a$model.final)
 
 
-## Significant clusters 
-########################
-cl.prob <- unlist(lapply(TLModel2a$model.final$marginals.random$ID.clust, function(x) 1-inla.pmarginal(0,x)))
+## Significant clusters: 
+cl.prob <- data.frame(ID=rownames(TLModel2a$model.final$summary.random$ID.clust),
+                      prob=unlist(lapply(TLModel2a$model.final$marginals.random$ID.clust, function(x) 1-inla.pmarginal(0,x))))
 
-ID <- as.character(TLModel2a$factor.clust)
-ID[nchar(ID)==1] <- paste("0",ID,sep="")[nchar(ID)==1]
+Carto.COM$ID <- TLModel2a$factor.clust
+cluster.map <- aggregate(Carto.COM[,"geometry"], by=list(ID=Carto.COM$ID), head)
+cluster.map$prob <- unlist(lapply(TLModel2a$model.final$marginals.random$ID.clust, function(x) 1-inla.pmarginal(0,x)))
 
-cluster.map <- unionSpatialPolygons(Carto.COM,ID)
-cluster.map$cl.prob <- cut2(cl.prob,c(0,0.05,0.1,0.2,0.8,0.9,0.95,1))
+paleta <- brewer.pal(9,"RdYlGn")[c(9,8,7,5,3,2,1)]
+values <- c(0,0.05,0.1,0.2,0.8,0.9,0.95,1)
 
-spplot(cluster.map, "cl.prob", names.attr="", cuts=6, col.regions=brewer.pal(9,"RdYlGn")[c(9,8,7,5,3,2,1)],
-       colorkey=list(labels=list(at=c(.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5),labels = c("0","0.05","0.1","0.2","0.8","0.9","0.95","1"))),
-       main=expression(Pr(psi[j(i)]>0 ~"|"~ O)))
+Map.cluster <- tm_shape(cluster.map) +
+  tm_polygons(col="prob", palette=paleta, title="", legend.show=T, legend.reverse=T,
+              style="fixed", breaks=values, interval.closure="left") + 
+  tm_layout(main.title=expression(Pr(psi[j(i)]>0 ~"|"~ O)),
+            main.title.position=0.3, main.title.size=1,
+            legend.outside=T, legend.outside.position="right", legend.frame=F)
+print(Map.cluster)
 
 
 ###########################################
@@ -252,29 +270,9 @@ delta <- unlist(lapply(STcluster.model$model.final$marginals.random$ID.clust, fu
 delta.prob <- unlist(lapply(STcluster.model$model.final$marginals.random$ID.clust, function(x){1-inla.pmarginal(0, x)}))
 
 ID <- which(delta.prob>0.95)
-#ID <- which(delta.prob<0.05)
+# ID <- which(delta.prob<0.05)
 
-clusterH.sp <- vector("list",0)
-clusterL.sp <- vector("list",0)
-
-cluster.matrix <- matrix(STcluster.model$factor.clust,n,t,byrow=FALSE)
-for(i in ID) {
-  
-  cluster.layout <- vector("list",sum(apply(cluster.matrix,2,function(x) any(x==i))))
-  
-  cont <- 1
-  for(j in which(apply(cluster.matrix,2,function(x) any(x==i)))){
-    lista <- rep(NA,n)
-    lista[cluster.matrix[,j]==i] <- i
-    
-    cluster.layout[[cont]] <- list("sp.polygons", unionSpatialPolygons(Carto.COM,lista), lwd=3, first=FALSE, which=j)
-    cont=cont+1
-  }
-  
-  clusterH.sp <- append(clusterH.sp,cluster.layout)
-}
-
-ClusterH.loc <- as.vector(cluster.matrix)
+ClusterH.loc <- STcluster.model$factor.clust
 ClusterH.loc[!(ClusterH.loc %in% ID)] <- NA
 ClusterH.loc <- as.data.frame(matrix(ClusterH.loc,n,t,byrow=FALSE))
 
@@ -282,18 +280,20 @@ for(i in 1:ncol(ClusterH.loc)){
   ClusterH.loc[,i] <- factor(ClusterH.loc[,i], levels=ID, labels=paste("Cluster",length(ID):1))
 }
 names(ClusterH.loc) <- paste("High",t.from:t.to,sep="")
-attr(Carto.COM,"data") <- cbind(attr(Carto.COM,"data"), ClusterH.loc)
+carto.clust <- cbind(Carto.COM,ClusterH.loc)
 
 paletaH <- brewer.pal(length(ID)+3,"Reds")[c(2,4)]
 paletaL <- brewer.pal(length(ID)+2,"Greens")[-c(1,4)]
 
-s <- spplot(Carto.COM, paste("High",t.from:t.to,sep=""), names.attr=as.character(seq(t.from,t.to)),
-            layout=c(3,3), as.table=T, sp.layout=clusterH.sp,
-            col.regions=paletaH[order(delta[ID])], main="High risk clusters")
-#	          col.regions=paletaL[order(delta[ID])], main="Low risk clusters")
-
-s$legend$right$args$key$col <- paletaH[length(ID):1]
-#s$legend$right$args$key$col <- paletaL[length(ID):1]
-
-s$legend$right$args$key$labels$labels <- round(sort(delta[ID])[length(ID):1],2)
-print(s)
+Map.cluster <- tm_shape(carto.clust) +
+  tm_polygons(col=paste("High",t.from:t.to,sep=""), title="",
+              labels=as.character(round(sort(delta[ID])[length(ID):1],2)),
+              colorNA="white", showNA=FALSE, legend.show=T, legend.reverse=T,
+              palette=paletaH[order(delta[ID])],
+              style="fixed", interval.closure="left") + 
+  tm_layout(main.title="High risk clusters", main.title.position=0.2, panel.label.size=1.5,
+            legend.outside=T, legend.outside.position="right", legend.frame=F,
+            panel.labels=paste("Year",seq(t.from,t.to)),
+            legend.outside.size=0.3, outer.margins=c(0.0,0.03,0.01,0)) + 
+  tm_facets(nrow=3, ncol=3)
+print(Map.cluster)

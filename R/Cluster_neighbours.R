@@ -21,7 +21,8 @@ Cluster.neighbours <- function(Carto, factor.clust, plot=FALSE){
     lista <- 1:nn
     lista[which(factor.clust!=sort(unique(factor.clust))[i])] <- NA
   
-    carto.aux <- unionSpatialPolygons(Carto, lista)
+    Carto$lista <- lista
+    carto.aux <- aggregate(Carto[,"geometry"], by=list(lista=Carto$lista), head)
     carto.clust[[i]] <- carto.aux
   
     if(plot){
@@ -29,7 +30,7 @@ Cluster.neighbours <- function(Carto, factor.clust, plot=FALSE){
       plot(carto.aux, main=paste("Cluster",i))
     }
   
-    if(length(carto.aux@polygons)>1) {
+    if(nrow(carto.aux)>1) {
       x.nb <- poly2nb(carto.aux, snap=0.01)
       nb2INLA(file=paste("Cluster_",i,".inla",sep=""), x.nb)
       if(plot) {plot(x.nb, coordinates(carto.aux), pch=19, add=TRUE)}
